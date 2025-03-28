@@ -20,25 +20,6 @@ public class S3Service {
     @Autowired
     private S3Client s3Client;
 
-    // @PostConstruct
-    // public void init() {
-    //     // Create a bucket
-    //     s3Client.createBucket(CreateBucketRequest.builder().bucket("my-bucket").build());
-
-    //     // Upload a file
-    //     File file = new File("local_file.txt"); // Ensure this file exists
-    //     s3Client.putObject(
-    //             PutObjectRequest.builder().bucket("my-bucket").key("remote_file.txt").build(),
-    //             RequestBody.fromFile(file)
-    //     );
-
-    //     // List objects
-    //     ListObjectsV2Response response = s3Client.listObjectsV2(
-    //             ListObjectsV2Request.builder().bucket("my-bucket").build()
-    //     );
-    //     response.contents().forEach(s3Object -> System.out.println(s3Object.key()));
-    // }
-
     public String createBucket(String bucketName) {
         s3Client.createBucket(CreateBucketRequest.builder().bucket(bucketName).build());
         return "Bucket " + bucketName + " created";
@@ -60,10 +41,23 @@ public class S3Service {
         return "File uploaded to " + bucketName + " as " + key;
     }
 
-    public List<String> listObjects(String bucketName) {
-        ListObjectsV2Response response = s3Client.listObjectsV2(
-                ListObjectsV2Request.builder().bucket(bucketName).build()
-        );
-        return response.contents().stream().map(s3Object -> s3Object.key()).collect(Collectors.toList());
+    public List<String> listObjectsRecursively(String bucketName) {
+        String continuationToken = null;
+        List<String> allKeys = new java.util.ArrayList<>();
+
+        do {
+            ListObjectsV2Request.Builder requestBuilder = ListObjectsV2Request.builder().bucket(bucketName);
+            if (continuationToken != null) {
+                requestBuilder.continuationToken(continuationToken);
+            }
+
+            ListObjectsV2Response response = s3Client.listObjectsV2(requestBuilder.build());
+            response.contents().forEach(s3Object -> System.out.println(s3Object.key()));
+            allKeys.addAll(response.contents().stream().map(s3Object -> s3Object.key()).collect(Collectors.toList()));
+
+            continuationToken = response.nextContinuationToken();
+        } while (continuationToken != null);
+
+        return allKeys;
     }
 }

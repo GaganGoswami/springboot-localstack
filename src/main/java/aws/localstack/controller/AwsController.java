@@ -31,7 +31,7 @@ public class AwsController {
 
     @GetMapping("/s3/list/{bucketName}")
     public List<String> listObjects(@PathVariable String bucketName) {
-        return s3Service.listObjects(bucketName);
+        return s3Service.listObjectsRecursively(bucketName);
     }
 
     @PostMapping("/dynamodb/table/{tableName}")
